@@ -1,0 +1,17 @@
+[project]
+name = "pbcli"
+version = "1.0.0"
+description = "Access Pinboard Bookmark via Command Line Interface"
+readme = "README.md"
+authors = [
+    { name = "Hai Vu", email = "haivu2004@gmail.com" }
+]
+requires-python = ">=3.12"
+dependencies = []
+
+[project.scripts]
+pbcli = "pbcli.main:main"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
