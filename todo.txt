@@ -1,0 +1,4 @@
+- Tags to use table
+- Use click instead of argparse
+- Separate config into its own module
+- Research: better config package?
