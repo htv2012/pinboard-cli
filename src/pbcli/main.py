@@ -178,7 +178,12 @@ def tags():
     print(textwrap.fill(tags_cloud))
 
 
-def list_notes(api, note_id=None):
+@main.command()
+@click.argument("note_id", required=False)
+def notes(note_id):
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
+
     notes = api.notes
     if note_id is None:
         for note in notes:
