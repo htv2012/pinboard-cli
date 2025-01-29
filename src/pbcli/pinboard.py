@@ -13,6 +13,8 @@ import ssl
 import urllib.parse
 import urllib.request
 
+from .config import get_user
+
 logging.basicConfig(level=os.getenv("LOGLEVEL", "WARN"))
 LOGGER = logging.getLogger(__name__)
 
@@ -147,6 +149,7 @@ class Note:
         self._api = api
         self.id = raw["id"]
         self.title = raw["title"]
+        self.user = get_user()
 
     @property
     def text(self):
@@ -160,7 +163,7 @@ class Note:
         return "%s\n  ID: %s\n  URL: %s" % (
             self.title,
             self.id,
-            f"https://pinboard.in/u:htv2017/notes/{self.id}",
+            f"https://pinboard.in/u:{self.user}/notes/{self.id}",
         )
 
 
