@@ -7,8 +7,11 @@ import argparse
 import json
 import logging
 import os
+import pathlib
 import platform
 import textwrap
+
+import tomllib
 
 from . import pinboard
 
@@ -24,9 +27,7 @@ def get_auth_token():
     """
     system = platform.system()
     if system in {"Darwin", "Linux", "FreeBSD"}:
-        config_filename = os.path.expandvars(
-            "$HOME/.config/southeastwind/pinboard.json"
-        )
+        config_filename = pathlib.Path("~/.config/pbcli.toml").expanduser()
     else:
         raise SystemExit(f"get_auth_token not implemented for {system}")
 
@@ -36,10 +37,10 @@ def get_auth_token():
             '{"auth token": "(add your API token here)"}'
         )
 
-    with open(config_filename) as file_handle:
-        config = json.load(file_handle)
+    with open(config_filename, "rb") as stream:
+        config = tomllib.load(stream)
 
-    return config["auth token"]
+    return config["auth-token"]
 
 
 def parse_command_line():
