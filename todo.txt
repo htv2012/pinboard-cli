@@ -3,3 +3,4 @@
 - Use loguru
 - Use requests
 - Allow display of individual note
+- Convert to API v2 https://www.pinboard.in/api

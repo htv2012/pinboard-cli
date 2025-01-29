@@ -126,46 +126,55 @@ def rm(urls):
             print(f"{url} not found")
 
 
-def export_posts(api):
-    """
-    Exports all posts to JSON
+@main.command()
+def export():
+    """Exports all posts to JSON"""
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
 
-    :param api: A PinboardApi object
-    """
     json_posts = api.get_posts()
     print(json.dumps(json_posts, sort_keys=True, indent=4))
 
 
-def create_post(
-    posts,
+@main.command()
+@click.argument("url")
+@click.argument("title")
+@click.option("-d", "--description")
+@click.option("-t", "--tags", multiple=True)
+@click.option("-f", "--force-overwrite", is_flag=True, default=False)
+@click.option("-p", "--public", is_flag=True, default=False)
+@click.option("-r", "--reading-list", is_flag=True, default=False)
+def add(
     url,
+    title,
     description,
-    extended=None,
-    tags=None,
-    replace="yes",
-    shared="no",
-    toread="no",
+    tags,
+    force_overwrite,
+    public,
+    reading_list,
 ):
-    """
-    Creates a new post
+    """Creates a new post"""
+    print(f"{url=}")
+    print(f"{title=}")
+    print(f"{description=}")
+    print(f"{tags=}")
+    print(f"{force_overwrite=}")
+    print(f"{public=}")
+    print(f"{reading_list=}")
 
-    :param posts: A pinboard.Posts object
-    :param url: A string representing the URL
-    :param description: The first line of the description (title)
-    :param extended: The subsequent line of the description
-    :param tags: A space-separated string representing the tags
-    :param replace: A yes/no indicate to replace existing entries if needed
-    :param shared: A yes/no to indicate public post
-    :param toread: A yes/no to place the post into a read list
-    """
+
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
+    posts = pinboard.Posts(api, fetch=False)
+
     posts.create(
         url=url,
+        title=title,
         description=description,
-        extended=extended,
         tags=tags,
-        replace=replace,
-        shared=shared,
-        toread=toread,
+        force_overwrite=force_overwrite,
+        public=public,
+        reading_list=reading_list,
     )
 
 
@@ -182,6 +191,7 @@ def tags():
 @main.command()
 @click.argument("note_id", required=False)
 def notes(note_id):
+    """List note titles, or display individual note"""
     auth_token = get_auth_token()
     api = pinboard.Pinboard(auth_token)
 

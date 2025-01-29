@@ -101,39 +101,28 @@ class Pinboard:
 
     def add_post(
         self,
-        url,
-        description,
-        extended=None,
-        tags=None,
-        replace="yes",
-        shared="no",
-        toread="no",
+        url: str,
+        title: str,
+        description: str = None,
+        tags: list[str] = None,
+        force_overwrite: bool = False,
+        public: bool = False,
+        reading_list: bool = False,
     ):
-        """
-        Create a new post or update an existing URL
-
-        :param url: The URL to add
-        :param description: Really the title
-        :param extended: The real description
-        :param tags: A list of tags, separated by spaces
-        :param replace: "yes" or "no". If yes, replace the existing
-            URL. If no, create a new post despite the duplicate URLs
-        :param shared: "yes" means public, "no" means private
-        :param toread: "yes" means to put into the to-read list, "no"
-            means do not put in the list
-        :return: a dictionary
-        """
-        args = dict(
+        """Create a new post or update an existing URL"""
+        kwargs = dict(
             url=url,
-            description=description,
-            extended=extended,
-            tags=tags,
-            replace=replace,
-            shared=shared,
-            toread=toread,
+            description=title,
+            replace=force_overwrite,
+            shared=public,
+            toread=reading_list,
         )
-        args = {k: v for k, v in args.items() if v is not None}
-        result = self.call_api("posts/add", **args)
+        if description:
+            kwargs["extended"] = description
+        if tags:
+            kwargs["tags"] = tags
+
+        result = self.call_api("posts/add", **kwargs)
         return result
 
     @property
