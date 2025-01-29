@@ -110,13 +110,14 @@ def ls(description, tag, url):
         print()
 
 
-def remove_posts(posts, urls):
-    """
-    Removes a list of URLs
+@main.command()
+@click.argument("urls", nargs=-1)
+def rm(urls):
+    """Removes a list of URLs"""
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
+    posts = pinboard.Posts(api, fetch=False)
 
-    :param posts: An object of type pinboard.Post
-    :param urls: A list of URLs to remove
-    """
     posts.refresh()
     for url in urls:
         try:
