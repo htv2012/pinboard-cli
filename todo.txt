@@ -2,3 +2,10 @@
 - Use click instead of argparse
 - Separate config into its own module
 - Research: better config package?
+- Use loguru
+- Use requests
+- Allow display of individual note
+- Not to hard-code username (htv2017)
+- Remove southeastwind from config path
+- Rename pinboard.json to pbcli.xxx after we determine which format to use
+- If config file does not exist, create an empty one and tell the user to fill in
