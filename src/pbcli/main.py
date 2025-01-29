@@ -7,7 +7,6 @@ import argparse
 import json
 import textwrap
 
-
 from . import pinboard
 from .config import get_auth_token
 
