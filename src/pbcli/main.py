@@ -7,8 +7,15 @@ import argparse
 import json
 import textwrap
 
+import click
+
 from . import pinboard
 from .config import get_auth_token
+
+
+@click.group()
+def main():
+    pass
 
 
 def parse_command_line():
@@ -66,15 +73,19 @@ def parse_command_line():
     return options
 
 
-def list_posts(posts, description=None, tag=None, url=None):
+@main.command()
+@click.option("-d", "--description")
+@click.option("-t", "--tag")
+@click.option("-u", "--url")
+def ls(description, tag, url):
     """
     Lists posts. If description, tag, or url are supplied, then perform
     a wildcard search by those fields
-
-    :param description: A search string which might contains wildcard
-    :param tag: A search string which might contains wildcard
-    :param url: A search string which might contains wildcard
     """
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
+    posts = pinboard.Posts(api, fetch=False)
+
     posts.refresh()
     posts = filter(lambda p: p.match(description, tag, url), posts)
     posts = sorted(posts, key=lambda p: p.description.lower())
@@ -157,12 +168,11 @@ def create_post(
     )
 
 
-def list_tags(api):
-    """
-    Lists the tags, sorted by tag name
-
-    :param api: A PinboardApi object
-    """
+@main.command()
+def tags():
+    """Lists the tags, sorted by tag name"""
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
     tags = api.get_tags()
     tags_cloud = " ".join("%s(%d)" % item for item in tags.items())
     print(textwrap.fill(tags_cloud))
@@ -182,39 +192,35 @@ def list_notes(api, note_id=None):
         print(found.text)
 
 
-def main():
-    """
-    Entry
-    """
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-    posts = pinboard.Posts(api, fetch=False)
-    options = parse_command_line()
-
-    if options.action == "ls":
-        list_posts(posts, options.description, options.tag, options.url)
-    elif options.action == "new":
-        create_post(
-            posts,
-            url=options.url,
-            description=options.description,
-            tags=options.tags,
-            shared=options.shared,
-            toread=options.toread,
-        )
-    elif options.action == "rm":
-        remove_posts(posts, options.urls)
-    elif options.action == "export":
-        export_posts(api)
-    elif options.action == "tags":
-        list_tags(api)
-    elif options.action == "rmtag":
-        api.tag_delete(options.tag)
-    elif options.action == "mvtag":
-        api.tag_rename(options.old_name, options.new_name)
-    elif options.action == "notes":
-        list_notes(api, options.id)
-
-
-if __name__ == "__main__":
-    main()
+# def main():
+#    """
+#    Entry
+#    """
+#    auth_token = get_auth_token()
+#    api = pinboard.Pinboard(auth_token)
+#    posts = pinboard.Posts(api, fetch=False)
+#    options = parse_command_line()
+#
+#    if options.action == "ls":
+#        list_posts(posts, options.description, options.tag, options.url)
+#    elif options.action == "new":
+#        create_post(
+#            posts,
+#            url=options.url,
+#            description=options.description,
+#            tags=options.tags,
+#            shared=options.shared,
+#            toread=options.toread,
+#        )
+#    elif options.action == "rm":
+#        remove_posts(posts, options.urls)
+#    elif options.action == "export":
+#        export_posts(api)
+#    elif options.action == "tags":
+#        list_tags(api)
+#    elif options.action == "rmtag":
+#        api.tag_delete(options.tag)
+#    elif options.action == "mvtag":
+#        api.tag_rename(options.old_name, options.new_name)
+#    elif options.action == "notes":
+#        list_notes(api, options.id)
