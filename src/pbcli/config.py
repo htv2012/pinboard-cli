@@ -13,9 +13,7 @@ import tomllib
 
 def get_config():
     """
-    Retrieve the API token from the configuration file
-
-    :return: The auth token
+    Retrieve the contents of the configuration file
     """
     system = platform.system()
     if system in {"Darwin", "Linux", "FreeBSD"}:
