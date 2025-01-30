@@ -28,9 +28,8 @@ def ls(description, tag, url):
     """
     auth_token = get_auth_token()
     api = pinboard.Pinboard(auth_token)
-    posts = pinboard.Posts(api, fetch=False)
 
-    posts.refresh()
+    posts = api.get_posts()
     posts = filter(lambda p: p.match(description, tag, url), posts)
     posts = sorted(posts, key=lambda p: p.description.lower())
     for post in posts:

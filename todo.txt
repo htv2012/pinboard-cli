@@ -2,6 +2,6 @@
 - Use loguru
 - Use requests
 - Convert to API v2 https://www.pinboard.in/api
-- Use color output
-- Delete the Posts class
+- Provide color output
 - Rename Post to Bookmark
+- Click: How do I return status code back to the shell?

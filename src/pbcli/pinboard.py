@@ -4,7 +4,6 @@ This module provides the tools to interact with https://pinboard.in
 service
 """
 
-import collections.abc
 import html
 import json
 import logging
@@ -93,7 +92,7 @@ class Pinboard:
         :return: A JSON object representing a list of posts
         """
         result = self.call_api("posts/all")
-        return result
+        return [Post(fields) for fields in result]
 
     def delete_post(self, url):
         """
@@ -206,40 +205,6 @@ class Post:
             and _matched(tag, self.tags, ignore_case)
             and _matched(url, self.href, ignore_case)
         )
-
-
-class Posts(collections.abc.MutableSequence):
-    """
-    A collection of posts
-    """
-
-    def __init__(self, api, fetch=True):
-        self.api = api
-        self.posts = None
-        if fetch:
-            self.refresh()
-
-    def __getitem__(self, key):
-        return self.posts[key]
-
-    def __setitem__(self, key, value):
-        print(f"__setitem__ key={key}, value={value}")
-        self.posts[key] = value
-
-    def __delitem__(self, key):
-        raise NotImplementedError("No need for this method in this context")
-
-    def insert(self, index, value):
-        raise NotImplementedError("No need for this method in this context")
-
-    def __len__(self):
-        return len(self.posts)
-
-    def refresh(self):
-        """
-        Retrieves posts from the server
-        """
-        self.posts = [Post(fields) for fields in self.api.get_posts()]
 
 
 def _matched(search_term, text, ignore_case):
