@@ -3,7 +3,6 @@
 A CLI interface into pinboard
 """
 
-import argparse
 import json
 import textwrap
 
@@ -16,61 +15,6 @@ from .config import get_auth_token
 @click.group()
 def main():
     pass
-
-
-def parse_command_line():
-    """
-    Parses and packages command line arguments
-
-    :return: An argparse.Namespace object
-    """
-    parser = argparse.ArgumentParser()
-    sub_parsers = parser.add_subparsers(dest="action")
-    sub_parsers.required = True
-
-    sub_parsers.add_parser("export")
-
-    argument_parser = sub_parsers.add_parser("ls")
-    argument_parser.add_argument(
-        "-d",
-        "--description",
-    )
-    argument_parser.add_argument(
-        "-t",
-        "--tag",
-    )
-    argument_parser.add_argument("-u", "--url")
-
-    argument_parser = sub_parsers.add_parser("new")
-    argument_parser.add_argument(
-        "-t", "--tags", help="Multiple tags must be quoted and space separated"
-    )
-    argument_parser.add_argument(
-        "-s", "--shared", default="no", action="store_const", const="yes"
-    )
-    argument_parser.add_argument(
-        "-r", "--toread", default="no", action="store_const", const="yes"
-    )
-    argument_parser.add_argument("url")
-    argument_parser.add_argument("description")
-
-    argument_parser = sub_parsers.add_parser("rm")
-    argument_parser.add_argument("urls", nargs="+")
-
-    argument_parser = sub_parsers.add_parser("tags")
-
-    argument_parser = sub_parsers.add_parser("rmtag")
-    argument_parser.add_argument("tag")
-
-    argument_parser = sub_parsers.add_parser("mvtag")
-    argument_parser.add_argument("old_name")
-    argument_parser.add_argument("new_name")
-
-    argument_parser = sub_parsers.add_parser("notes")
-    argument_parser.add_argument("-i", "--id", default=None, required=False)
-
-    options = parser.parse_args()
-    return options
 
 
 @main.command()
@@ -154,20 +98,10 @@ def add(
     reading_list,
 ):
     """Creates a new post"""
-    print(f"{url=}")
-    print(f"{title=}")
-    print(f"{description=}")
-    print(f"{tags=}")
-    print(f"{force_overwrite=}")
-    print(f"{public=}")
-    print(f"{reading_list=}")
-
-
     auth_token = get_auth_token()
     api = pinboard.Pinboard(auth_token)
-    posts = pinboard.Posts(api, fetch=False)
 
-    posts.create(
+    result = api.add_post(
         url=url,
         title=title,
         description=description,
@@ -176,6 +110,9 @@ def add(
         public=public,
         reading_list=reading_list,
     )
+    if result["result_code"] != "done":
+        # TODO: use color
+        print(result["result_code"])
 
 
 @main.command()

@@ -19,6 +19,12 @@ logging.basicConfig(level=os.getenv("LOGLEVEL", "WARN"))
 LOGGER = logging.getLogger(__name__)
 
 
+def yes_no(value: bool):
+    if value:
+        return "yes"
+    return "no"
+
+
 class Pinboard:
     """
     An API to pinboard.in service
@@ -113,14 +119,14 @@ class Pinboard:
         kwargs = dict(
             url=url,
             description=title,
-            replace=force_overwrite,
-            shared=public,
-            toread=reading_list,
+            replace=yes_no(force_overwrite),
+            shared=yes_no(public),
+            toread=yes_no(reading_list),
         )
         if description:
             kwargs["extended"] = description
         if tags:
-            kwargs["tags"] = tags
+            kwargs["tags"] = ",".join(tags)
 
         result = self.call_api("posts/add", **kwargs)
         return result
@@ -234,25 +240,6 @@ class Posts(collections.abc.MutableSequence):
         Retrieves posts from the server
         """
         self.posts = [Post(fields) for fields in self.api.get_posts()]
-
-    def create(
-        self,
-        url,
-        description,
-        extended=None,
-        tags=None,
-        replace="yes",
-        shared="no",
-        toread="no",
-    ):
-        """
-        Creates a post (bookmark)
-        """
-
-        result = self.api.add_post(
-            url, description, extended, tags, replace, shared, toread
-        )
-        LOGGER.debug("Add post, result = %r", result)
 
     def delete(self, url):
         """
