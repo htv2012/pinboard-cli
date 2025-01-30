@@ -3,3 +3,4 @@
 - Use requests
 - Convert to API v2 https://www.pinboard.in/api
 - Use color output
+- Delete the Posts class
