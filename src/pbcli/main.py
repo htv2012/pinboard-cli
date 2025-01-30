@@ -60,14 +60,11 @@ def rm(urls):
     """Removes a list of URLs"""
     auth_token = get_auth_token()
     api = pinboard.Pinboard(auth_token)
-    posts = pinboard.Posts(api, fetch=False)
-
-    posts.refresh()
     for url in urls:
-        try:
-            posts.delete(url)
-        except ValueError:
-            print(f"{url} not found")
+        result = api.delete_post(url)
+        if (code := result["result_code"]) != "done":
+            # TODO: output in error color
+            print(f"{url}: {code}")
 
 
 @main.command()
@@ -143,37 +140,3 @@ def notes(note_id):
         print(found.title)
         print()
         print(found.text)
-
-
-# def main():
-#    """
-#    Entry
-#    """
-#    auth_token = get_auth_token()
-#    api = pinboard.Pinboard(auth_token)
-#    posts = pinboard.Posts(api, fetch=False)
-#    options = parse_command_line()
-#
-#    if options.action == "ls":
-#        list_posts(posts, options.description, options.tag, options.url)
-#    elif options.action == "new":
-#        create_post(
-#            posts,
-#            url=options.url,
-#            description=options.description,
-#            tags=options.tags,
-#            shared=options.shared,
-#            toread=options.toread,
-#        )
-#    elif options.action == "rm":
-#        remove_posts(posts, options.urls)
-#    elif options.action == "export":
-#        export_posts(api)
-#    elif options.action == "tags":
-#        list_tags(api)
-#    elif options.action == "rmtag":
-#        api.tag_delete(options.tag)
-#    elif options.action == "mvtag":
-#        api.tag_rename(options.old_name, options.new_name)
-#    elif options.action == "notes":
-#        list_notes(api, options.id)

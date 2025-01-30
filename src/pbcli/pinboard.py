@@ -241,21 +241,6 @@ class Posts(collections.abc.MutableSequence):
         """
         self.posts = [Post(fields) for fields in self.api.get_posts()]
 
-    def delete(self, url):
-        """
-        Deletes a post by url
-
-        :param url: A string representing the URL to delete
-        """
-        LOGGER.debug("Deleting URL: %r", url)
-        result = self.api.delete_post(url)
-        LOGGER.debug("Result: %r", result)
-        if result["result_code"] == "item not found":
-            raise ValueError("list.remove(x): x not in list")
-
-        # Update the underline posts
-        self.posts = [post for post in self.posts if post.href != url]
-
 
 def _matched(search_term, text, ignore_case):
     """
