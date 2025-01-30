@@ -1,5 +1,7 @@
 - Tags to use table
-- Use click instead of argparse
 - Use loguru
 - Use requests
-- Allow display of individual note
+- Convert to API v2 https://www.pinboard.in/api
+- Provide color output
+- Rename Post to Bookmark
+- Click: How do I return status code back to the shell?

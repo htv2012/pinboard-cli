@@ -3,79 +3,33 @@
 A CLI interface into pinboard
 """
 
-import argparse
 import json
 import textwrap
+
+import click
 
 from . import pinboard
 from .config import get_auth_token
 
 
-def parse_command_line():
-    """
-    Parses and packages command line arguments
-
-    :return: An argparse.Namespace object
-    """
-    parser = argparse.ArgumentParser()
-    sub_parsers = parser.add_subparsers(dest="action")
-    sub_parsers.required = True
-
-    sub_parsers.add_parser("export")
-
-    argument_parser = sub_parsers.add_parser("ls")
-    argument_parser.add_argument(
-        "-d",
-        "--description",
-    )
-    argument_parser.add_argument(
-        "-t",
-        "--tag",
-    )
-    argument_parser.add_argument("-u", "--url")
-
-    argument_parser = sub_parsers.add_parser("new")
-    argument_parser.add_argument(
-        "-t", "--tags", help="Multiple tags must be quoted and space separated"
-    )
-    argument_parser.add_argument(
-        "-s", "--shared", default="no", action="store_const", const="yes"
-    )
-    argument_parser.add_argument(
-        "-r", "--toread", default="no", action="store_const", const="yes"
-    )
-    argument_parser.add_argument("url")
-    argument_parser.add_argument("description")
-
-    argument_parser = sub_parsers.add_parser("rm")
-    argument_parser.add_argument("urls", nargs="+")
-
-    argument_parser = sub_parsers.add_parser("tags")
-
-    argument_parser = sub_parsers.add_parser("rmtag")
-    argument_parser.add_argument("tag")
-
-    argument_parser = sub_parsers.add_parser("mvtag")
-    argument_parser.add_argument("old_name")
-    argument_parser.add_argument("new_name")
-
-    argument_parser = sub_parsers.add_parser("notes")
-    argument_parser.add_argument("-i", "--id", default=None, required=False)
-
-    options = parser.parse_args()
-    return options
+@click.group()
+def main():
+    pass
 
 
-def list_posts(posts, description=None, tag=None, url=None):
+@main.command()
+@click.option("-d", "--description")
+@click.option("-t", "--tag")
+@click.option("-u", "--url")
+def ls(description, tag, url):
     """
     Lists posts. If description, tag, or url are supplied, then perform
     a wildcard search by those fields
-
-    :param description: A search string which might contains wildcard
-    :param tag: A search string which might contains wildcard
-    :param url: A search string which might contains wildcard
     """
-    posts.refresh()
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
+
+    posts = api.get_posts()
     posts = filter(lambda p: p.match(description, tag, url), posts)
     posts = sorted(posts, key=lambda p: p.description.lower())
     for post in posts:
@@ -99,76 +53,81 @@ def list_posts(posts, description=None, tag=None, url=None):
         print()
 
 
-def remove_posts(posts, urls):
-    """
-    Removes a list of URLs
-
-    :param posts: An object of type pinboard.Post
-    :param urls: A list of URLs to remove
-    """
-    posts.refresh()
+@main.command()
+@click.argument("urls", nargs=-1)
+def rm(urls):
+    """Removes a list of URLs"""
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
     for url in urls:
-        try:
-            posts.delete(url)
-        except ValueError:
-            print(f"{url} not found")
+        result = api.delete_post(url)
+        if (code := result["result_code"]) != "done":
+            # TODO: output in error color
+            print(f"{url}: {code}")
 
 
-def export_posts(api):
-    """
-    Exports all posts to JSON
+@main.command()
+def export():
+    """Exports all posts to JSON"""
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
 
-    :param api: A PinboardApi object
-    """
     json_posts = api.get_posts()
     print(json.dumps(json_posts, sort_keys=True, indent=4))
 
 
-def create_post(
-    posts,
+@main.command()
+@click.argument("url")
+@click.argument("title")
+@click.option("-d", "--description")
+@click.option("-t", "--tags", multiple=True)
+@click.option("-f", "--force-overwrite", is_flag=True, default=False)
+@click.option("-p", "--public", is_flag=True, default=False)
+@click.option("-r", "--reading-list", is_flag=True, default=False)
+def add(
     url,
+    title,
     description,
-    extended=None,
-    tags=None,
-    replace="yes",
-    shared="no",
-    toread="no",
+    tags,
+    force_overwrite,
+    public,
+    reading_list,
 ):
-    """
-    Creates a new post
+    """Creates a new post"""
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
 
-    :param posts: A pinboard.Posts object
-    :param url: A string representing the URL
-    :param description: The first line of the description (title)
-    :param extended: The subsequent line of the description
-    :param tags: A space-separated string representing the tags
-    :param replace: A yes/no indicate to replace existing entries if needed
-    :param shared: A yes/no to indicate public post
-    :param toread: A yes/no to place the post into a read list
-    """
-    posts.create(
+    result = api.add_post(
         url=url,
+        title=title,
         description=description,
-        extended=extended,
         tags=tags,
-        replace=replace,
-        shared=shared,
-        toread=toread,
+        force_overwrite=force_overwrite,
+        public=public,
+        reading_list=reading_list,
     )
+    if result["result_code"] != "done":
+        # TODO: use color
+        print(result["result_code"])
 
 
-def list_tags(api):
-    """
-    Lists the tags, sorted by tag name
-
-    :param api: A PinboardApi object
-    """
+@main.command()
+def tags():
+    """Lists the tags, sorted by tag name"""
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
     tags = api.get_tags()
     tags_cloud = " ".join("%s(%d)" % item for item in tags.items())
     print(textwrap.fill(tags_cloud))
 
 
-def list_notes(api, note_id=None):
+@main.command()
+@click.argument("note_id", required=False)
+def notes(note_id):
+    """List note titles, or display individual note"""
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
+
     notes = api.notes
     if note_id is None:
         for note in notes:
@@ -180,41 +139,3 @@ def list_notes(api, note_id=None):
         print(found.title)
         print()
         print(found.text)
-
-
-def main():
-    """
-    Entry
-    """
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-    posts = pinboard.Posts(api, fetch=False)
-    options = parse_command_line()
-
-    if options.action == "ls":
-        list_posts(posts, options.description, options.tag, options.url)
-    elif options.action == "new":
-        create_post(
-            posts,
-            url=options.url,
-            description=options.description,
-            tags=options.tags,
-            shared=options.shared,
-            toread=options.toread,
-        )
-    elif options.action == "rm":
-        remove_posts(posts, options.urls)
-    elif options.action == "export":
-        export_posts(api)
-    elif options.action == "tags":
-        list_tags(api)
-    elif options.action == "rmtag":
-        api.tag_delete(options.tag)
-    elif options.action == "mvtag":
-        api.tag_rename(options.old_name, options.new_name)
-    elif options.action == "notes":
-        list_notes(api, options.id)
-
-
-if __name__ == "__main__":
-    main()

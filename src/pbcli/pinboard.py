@@ -4,7 +4,6 @@ This module provides the tools to interact with https://pinboard.in
 service
 """
 
-import collections.abc
 import html
 import json
 import logging
@@ -17,6 +16,12 @@ from .config import get_user
 
 logging.basicConfig(level=os.getenv("LOGLEVEL", "WARN"))
 LOGGER = logging.getLogger(__name__)
+
+
+def yes_no(value: bool):
+    if value:
+        return "yes"
+    return "no"
 
 
 class Pinboard:
@@ -87,7 +92,7 @@ class Pinboard:
         :return: A JSON object representing a list of posts
         """
         result = self.call_api("posts/all")
-        return result
+        return [Post(fields) for fields in result]
 
     def delete_post(self, url):
         """
@@ -101,39 +106,28 @@ class Pinboard:
 
     def add_post(
         self,
-        url,
-        description,
-        extended=None,
-        tags=None,
-        replace="yes",
-        shared="no",
-        toread="no",
+        url: str,
+        title: str,
+        description: str = None,
+        tags: list[str] = None,
+        force_overwrite: bool = False,
+        public: bool = False,
+        reading_list: bool = False,
     ):
-        """
-        Create a new post or update an existing URL
-
-        :param url: The URL to add
-        :param description: Really the title
-        :param extended: The real description
-        :param tags: A list of tags, separated by spaces
-        :param replace: "yes" or "no". If yes, replace the existing
-            URL. If no, create a new post despite the duplicate URLs
-        :param shared: "yes" means public, "no" means private
-        :param toread: "yes" means to put into the to-read list, "no"
-            means do not put in the list
-        :return: a dictionary
-        """
-        args = dict(
+        """Create a new post or update an existing URL"""
+        kwargs = dict(
             url=url,
-            description=description,
-            extended=extended,
-            tags=tags,
-            replace=replace,
-            shared=shared,
-            toread=toread,
+            description=title,
+            replace=yes_no(force_overwrite),
+            shared=yes_no(public),
+            toread=yes_no(reading_list),
         )
-        args = {k: v for k, v in args.items() if v is not None}
-        result = self.call_api("posts/add", **args)
+        if description:
+            kwargs["extended"] = description
+        if tags:
+            kwargs["tags"] = ",".join(tags)
+
+        result = self.call_api("posts/add", **kwargs)
         return result
 
     @property
@@ -211,74 +205,6 @@ class Post:
             and _matched(tag, self.tags, ignore_case)
             and _matched(url, self.href, ignore_case)
         )
-
-
-class Posts(collections.abc.MutableSequence):
-    """
-    A collection of posts
-    """
-
-    def __init__(self, api, fetch=True):
-        self.api = api
-        self.posts = None
-        if fetch:
-            self.refresh()
-
-    def __getitem__(self, key):
-        return self.posts[key]
-
-    def __setitem__(self, key, value):
-        print(f"__setitem__ key={key}, value={value}")
-        self.posts[key] = value
-
-    def __delitem__(self, key):
-        raise NotImplementedError("No need for this method in this context")
-
-    def insert(self, index, value):
-        raise NotImplementedError("No need for this method in this context")
-
-    def __len__(self):
-        return len(self.posts)
-
-    def refresh(self):
-        """
-        Retrieves posts from the server
-        """
-        self.posts = [Post(fields) for fields in self.api.get_posts()]
-
-    def create(
-        self,
-        url,
-        description,
-        extended=None,
-        tags=None,
-        replace="yes",
-        shared="no",
-        toread="no",
-    ):
-        """
-        Creates a post (bookmark)
-        """
-
-        result = self.api.add_post(
-            url, description, extended, tags, replace, shared, toread
-        )
-        LOGGER.debug("Add post, result = %r", result)
-
-    def delete(self, url):
-        """
-        Deletes a post by url
-
-        :param url: A string representing the URL to delete
-        """
-        LOGGER.debug("Deleting URL: %r", url)
-        result = self.api.delete_post(url)
-        LOGGER.debug("Result: %r", result)
-        if result["result_code"] == "item not found":
-            raise ValueError("list.remove(x): x not in list")
-
-        # Update the underline posts
-        self.posts = [post for post in self.posts if post.href != url]
 
 
 def _matched(search_term, text, ignore_case):

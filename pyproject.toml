@@ -1,13 +1,15 @@
 [project]
 name = "pbcli"
-version = "1.1.0"
+version = "1.2.0"
 description = "Access Pinboard Bookmark via Command Line Interface"
 readme = "README.md"
 authors = [
     { name = "Hai Vu", email = "haivu2004@gmail.com" }
 ]
 requires-python = ">=3.12"
-dependencies = []
+dependencies = [
+    "click>=8.1.8",
+]
 
 [project.scripts]
 pbcli = "pbcli.main:main"
