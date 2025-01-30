@@ -1,0 +1,15 @@
+meta {
+  name: tags-get
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{root}}/tags/get?{{query}}
+  body: none
+  auth: none
+}
+
+params:query {
+  {{query}}: 
+}
