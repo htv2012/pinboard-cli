@@ -13,6 +13,7 @@ from .config import get_auth_token
 
 
 @click.group()
+@click.version_option()
 def main():
     pass
 
