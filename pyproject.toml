@@ -1,6 +1,6 @@
 [project]
 name = "pbcli"
-version = "1.4.0"
+version = "2.0.0"
 description = "Access Pinboard Bookmark via Command Line Interface"
 readme = "README.md"
 authors = [

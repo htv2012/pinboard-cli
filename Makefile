@@ -11,6 +11,9 @@ lint:
 
 ### Run the project
 run: lint
+	@echo "\n#\n# Stat\n#"
+	uv run pbcli stat
+	@echo "\n#\n# Tags\n#"
 	uv run pbcli tags
 
 ### Run unit tests

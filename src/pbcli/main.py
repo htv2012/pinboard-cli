@@ -13,10 +13,33 @@ from . import columnize, pinboard
 from .config import get_auth_token
 
 
+def get_api():
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
+    return api
+
+
 @click.group()
 @click.version_option()
 def main():
     pass
+
+
+@main.command()
+def stat():
+    api = get_api()
+
+    bookmarks = api.get_all_posts(raw=True)
+    print(f"Bookmarks count: {len(bookmarks)}")
+
+    notes = api.get_all_notes()
+    print(f"Notes count: {len(notes)}")
+
+    tags = api.get_tags()
+    print(f"Tags count: {len(tags)}")
+
+    result = api.get_last_update()
+    print(f"Last Update: {result['update_time']}")
 
 
 @main.command()
@@ -142,7 +165,7 @@ def notes(note_id):
     auth_token = get_auth_token()
     api = pinboard.Pinboard(auth_token)
 
-    notes = api.notes
+    notes = api.get_all_notes()
     if note_id is None:
         for note in notes:
             print(f"{note}")

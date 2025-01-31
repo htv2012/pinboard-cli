@@ -56,6 +56,10 @@ class Pinboard:
         result = json.loads(result)
         return result
 
+    def get_last_update(self):
+        result = self.call_api("posts/update")
+        return result
+
     def get_tags(self):
         """
         Gets a list of tags
@@ -130,8 +134,7 @@ class Pinboard:
         result = self.call_api("posts/add", **kwargs)
         return result
 
-    @property
-    def notes(self):
+    def get_all_notes(self):
         result = self.call_api("notes/list")
         notes = [Note(raw, self) for raw in result["notes"]]
         return notes
