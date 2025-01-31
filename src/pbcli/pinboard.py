@@ -47,7 +47,7 @@ class Pinboard:
         """
         Call the API for a method
         """
-        params = {k: v for k, v in list(kwargs.items()) if v is not None}
+        params = {k: v for k, v in kwargs.items() if v is not None}
         url = self._build_url(method, **params)
         LOGGER.debug("call_api with url=%s", url)
         context = ssl.SSLContext()
@@ -83,13 +83,15 @@ class Pinboard:
 
         self.call_api("tags/rename", old=old_name, new=new_name)
 
-    def get_posts(self):
+    def get_all_posts(self, raw=False):
         """
         Retrieve a list of all posts
 
         :return: A JSON object representing a list of posts
         """
         result = self.call_api("posts/all")
+        if raw:
+            return result
         return [Post(fields) for fields in result]
 
     def delete_post(self, url):
@@ -164,16 +166,17 @@ class Post:
     A single post (bookmark)
     """
 
-    def __init__(self, post_as_dict):
-        self.description = post_as_dict["description"]
-        self.extended = post_as_dict["extended"]
-        self.hash_value = post_as_dict["hash"]
-        self.href = post_as_dict["href"]
-        self.meta = post_as_dict["meta"]
-        self.shared = post_as_dict["shared"]
-        self.tags = post_as_dict["tags"]
-        self.time_stamp = post_as_dict["time"]
-        self.toread = post_as_dict["toread"]
+    def __init__(self, raw):
+        self.description = raw["description"]
+        self.extended = raw["extended"]
+        self.hash_value = raw["hash"]
+        self.href = raw["href"]
+        self.meta = raw["meta"]
+        self.shared = raw["shared"]
+        self.tags = raw["tags"]
+        self.time_stamp = raw["time"]
+        self.toread = raw["toread"]
+        self._raw = raw
 
     def __repr__(self):
         return f"Post(description={self.description!r}, href={self.href!r})"

@@ -31,7 +31,7 @@ def ls(description, tag, url):
     auth_token = get_auth_token()
     api = pinboard.Pinboard(auth_token)
 
-    posts = api.get_posts()
+    posts = api.get_all_posts()
     posts = filter(lambda p: p.match(description, tag, url), posts)
     posts = sorted(posts, key=lambda p: p.description.lower())
     for post in posts:
@@ -74,8 +74,8 @@ def export():
     auth_token = get_auth_token()
     api = pinboard.Pinboard(auth_token)
 
-    json_posts = api.get_posts()
-    print(json.dumps(json_posts, sort_keys=True, indent=4))
+    json_posts = api.get_all_posts(raw=True)
+    print(json.dumps(json_posts, indent=4))
 
 
 @main.command()
