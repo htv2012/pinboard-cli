@@ -4,11 +4,12 @@ A CLI interface into pinboard
 """
 
 import json
+import operator
 import textwrap
 
 import click
 
-from . import pinboard
+from . import columnize, pinboard
 from .config import get_auth_token
 
 
@@ -113,13 +114,25 @@ def add(
 
 
 @main.command()
-def tags():
+@click.option("-s", "--sort-by", type=click.Choice(["name", "count"]), default="name")
+def tags(sort_by):
     """Lists the tags, sorted by tag name"""
     auth_token = get_auth_token()
     api = pinboard.Pinboard(auth_token)
+
+    if sort_by == "name":
+        key = operator.itemgetter(0)
+        reverse = False
+    else:
+        key = operator.itemgetter(1)
+        reverse = True
+
     tags = api.get_tags()
-    tags_cloud = " ".join("%s(%d)" % item for item in tags.items())
-    print(textwrap.fill(tags_cloud))
+    tags = [
+        f"{name}({count})"
+        for name, count in sorted(tags.items(), key=key, reverse=reverse)
+    ]
+    columnize.columnize(tags)
 
 
 @main.command()

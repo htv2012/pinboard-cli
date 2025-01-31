@@ -4,7 +4,6 @@ This module provides the tools to interact with https://pinboard.in
 service
 """
 
-import html
 import json
 import logging
 import os
@@ -64,7 +63,6 @@ class Pinboard:
         :return: a dictionary of {tag: count}
         """
         result = self.call_api("tags/get")
-        result = {html.unescape(k): int(v) for k, v in sorted(result.items())}
         return result
 
     def tag_delete(self, tag_name):
