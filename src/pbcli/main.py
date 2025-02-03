@@ -94,19 +94,19 @@ def export(ctx):
 
 @main.command()
 @click.pass_context
-@click.argument("url")
-@click.argument("title")
-@click.option("-d", "--description")
-@click.option("-t", "--tags", multiple=True)
-@click.option("-f", "--force-overwrite", is_flag=True, default=False)
-@click.option("-p", "--public", is_flag=True, default=False)
-@click.option("-r", "--reading-list", is_flag=True, default=False)
+@click.option("-u", "--url", prompt=True)
+@click.option("-n","--name", prompt=True)
+@click.option("-d", "--description", prompt=True)
+@click.option("-t", "--tag", multiple=True)
+@click.option("-f", "--force-overwrite", is_flag=True, default=False,prompt=True)
+@click.option("-p", "--public", is_flag=True, default=False,prompt=True)
+@click.option("-r", "--reading-list", is_flag=True, default=False,prompt=True)
 def add(
     ctx,
     url,
-    title,
+    name,
     description,
-    tags,
+    tag,
     force_overwrite,
     public,
     reading_list,
@@ -114,9 +114,9 @@ def add(
     """Creates a new post"""
     result = ctx.obj.api.add_post(
         url=url,
-        title=title,
+        title=name,
         description=description,
-        tags=tags,
+        tags=tag,
         force_overwrite=force_overwrite,
         public=public,
         reading_list=reading_list,
