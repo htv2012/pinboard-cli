@@ -3,7 +3,6 @@
 A CLI interface into pinboard
 """
 
-import json
 import operator
 import types
 
@@ -19,7 +18,7 @@ from .config import get_auth_token
 def main(ctx):
     auth_token = get_auth_token()
     ctx.ensure_object(types.SimpleNamespace)
-    ctx.obj.api = pinboard.Pinboard(auth_token)
+    ctx.obj.api = pinboard.PinboardAPI(auth_token)
 
 
 @main.command()
@@ -30,7 +29,7 @@ def recent(ctx, tags, count):
     """Lists recent bookmarks and notes"""
     if len(tags) > 3:
         ctx.fail("Number of tags should not exceed 3")
-    result = ctx.obj.api.get_recent_posts(tags=tags, count=count)
+    result = ctx.obj.api.get_recent_bookmarks(tags=tags, count=count)
 
     for entry in result["posts"]:
         bookmarklib.show(entry)
@@ -40,7 +39,7 @@ def recent(ctx, tags, count):
 @click.pass_context
 def stat(ctx):
     """Shows some stastistics"""
-    bookmarks = ctx.obj.api.get_all_posts()
+    bookmarks = ctx.obj.api.get_all_bookmarks()
     print(f"Bookmarks count: {len(bookmarks)}")
 
     notes = ctx.obj.api.get_all_notes()
@@ -60,15 +59,15 @@ def stat(ctx):
 @click.option("-t", "--tag", multiple=True, type=str.casefold, metavar="TEXT")
 @click.option("-u", "--url")
 def ls(ctx, name, description, tag, url):
-    """Lists all posts"""
-    posts = ctx.obj.api.get_all_posts()
-    posts = filter(bookmarklib.by_name(name), posts)
-    posts = filter(bookmarklib.by_description(description), posts)
-    posts = filter(bookmarklib.by_tag(tag), posts)
-    posts = filter(bookmarklib.by_url(url), posts)
+    """Lists bookmarks"""
+    bookmarks = ctx.obj.api.get_all_bookmarks()
+    bookmarks = filter(bookmarklib.by_name(name), bookmarks)
+    bookmarks = filter(bookmarklib.by_description(description), bookmarks)
+    bookmarks = filter(bookmarklib.by_tag(tag), bookmarks)
+    bookmarks = filter(bookmarklib.by_url(url), bookmarks)
 
-    for post in posts:
-        bookmarklib.show(post)
+    for bookmark in bookmarks:
+        bookmarklib.show(bookmark)
 
 
 # TODO: error if no url specified
@@ -78,7 +77,7 @@ def ls(ctx, name, description, tag, url):
 def rm(ctx, urls):
     """Removes a list of URLs"""
     for url in urls:
-        result = ctx.obj.api.delete_post(url)
+        result = ctx.obj.api.delete_bookmark(url)
         if (code := result["result_code"]) != "done":
             # TODO: output in error color
             print(f"{url}: {code}")
@@ -87,9 +86,9 @@ def rm(ctx, urls):
 @main.command()
 @click.pass_context
 def export(ctx):
-    """Exports all posts to JSON"""
-    json_posts = ctx.obj.api.get_all_posts()
-    print(json.dumps(json_posts, indent=4))
+    """Exports all bookmarks to JSON"""
+    result = ctx.obj.api.get_all_bookmarks()
+    notelib.show_json(result)
 
 
 @main.command()
@@ -111,8 +110,8 @@ def add(
     public,
     reading_list,
 ):
-    """Creates a new post"""
-    result = ctx.obj.api.add_post(
+    """Adds or updates a bookmark"""
+    result = ctx.obj.api.add_bookmark(
         url=url,
         title=name,
         description=description,
