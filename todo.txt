@@ -1,4 +1,0 @@
-- Use loguru
-- Provide color output
-- Rename Post to Bookmark
-- Click: How do I return status code back to the shell?
