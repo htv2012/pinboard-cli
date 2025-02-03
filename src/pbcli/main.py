@@ -8,7 +8,7 @@ import operator
 
 import click
 
-from . import bookmark, columnize, pinboard
+from . import bookmarklib, columnize, notelib, pinboard
 from .config import get_auth_token
 
 
@@ -39,7 +39,7 @@ def recent(ctx, tags, count):
     result = ctx.obj["api"].get_recent_posts(tags=tags, count=count)
 
     for entry in result["posts"]:
-        bookmark.show(entry)
+        bookmarklib.show(entry)
 
 
 @main.command()
@@ -71,13 +71,13 @@ def ls(name, description, tag, url):
     api = pinboard.Pinboard(auth_token)
 
     posts = api.get_all_posts()
-    posts = filter(bookmark.by_name(name), posts)
-    posts = filter(bookmark.by_description(description), posts)
-    posts = filter(bookmark.by_tag(tag), posts)
-    posts = filter(bookmark.by_url(url), posts)
+    posts = filter(bookmarklib.by_name(name), posts)
+    posts = filter(bookmarklib.by_description(description), posts)
+    posts = filter(bookmarklib.by_tag(tag), posts)
+    posts = filter(bookmarklib.by_url(url), posts)
 
     for post in posts:
-        bookmark.show(post)
+        bookmarklib.show(post)
 
 
 @main.command()
@@ -161,20 +161,35 @@ def tags(sort_by):
 
 
 @main.command()
-@click.argument("note_id", required=False)
-def notes(note_id):
+@click.option(
+    "-f", "--format", type=click.Choice(["full", "content", "json"]), default="full"
+)
+def notes(format):
     """List note titles, or display individual note"""
     auth_token = get_auth_token()
     api = pinboard.Pinboard(auth_token)
+    result = api.get_all_notes()
 
-    notes = api.get_all_notes()
-    if note_id is None:
-        for note in notes:
-            print(f"{note}")
+    if format == "json":
+        notelib.show_json(result)
     else:
-        found = next((note for note in notes if note.id == note_id), None)
-        if found is None:
-            raise SystemExit(f"ID not found: {note_id}")
-        print(found.title)
-        print()
-        print(found.text)
+        for entry in result["notes"]:
+            notelib.show(entry, format)
+
+
+@main.command()
+@click.pass_context
+@click.option(
+    "-f", "--format", type=click.Choice(["full", "content", "json"]), default="full"
+)
+@click.argument("note_id")
+def note(ctx, note_id, format):
+    """Shows a single note"""
+    auth_token = get_auth_token()
+    api = pinboard.Pinboard(auth_token)
+
+    if entry := api.get_note(note_id):
+        notelib.show(entry, format)
+    else:
+        notelib.show_not_found(note_id)
+        ctx.exit(1)

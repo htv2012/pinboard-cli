@@ -8,10 +8,9 @@ import json
 import logging
 import os
 import ssl
+import urllib.error
 import urllib.parse
 import urllib.request
-
-from .config import get_user
 
 logging.basicConfig(level=os.getenv("LOGLEVEL", "WARN"))
 LOGGER = logging.getLogger(__name__)
@@ -139,29 +138,13 @@ class Pinboard:
 
     def get_all_notes(self):
         result = self.call_api("notes/list")
-        notes = [Note(raw, self) for raw in result["notes"]]
-        return notes
+        return result
 
-
-class Note:
-    def __init__(self, raw, api):
-        self._raw = raw
-        self._api = api
-        self.id = raw["id"]
-        self.title = raw["title"]
-        self.user = get_user()
-
-    @property
-    def text(self):
-        result = self._api.call_api(f"notes/{self.id}")
-        return result["text"]
-
-    def __repr__(self):
-        return f"Note(id={self.id!r}, title={self.title!r})"
-
-    def __str__(self):
-        return "%s\n  ID: %s\n  URL: %s" % (
-            self.title,
-            self.id,
-            f"https://pinboard.in/u:{self.user}/notes/{self.id}",
-        )
+    def get_note(self, note_id: str):
+        try:
+            # See notes-ID.json for a sample result
+            result = self.call_api(f"notes/{note_id}")
+            return result
+        except urllib.error.HTTPError:
+            # Not found
+            return None

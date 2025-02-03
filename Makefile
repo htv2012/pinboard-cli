@@ -19,6 +19,8 @@ run: lint
 	uv run pbcli recent -c 2
 	@echo "\n#\n# ls\n#"
 	uv run pbcli ls --tag=cheatsheet
+	@echo "\n#\n# All notes\n#"
+	uv run pbcli notes
 
 ### Run unit tests
 test: lint
