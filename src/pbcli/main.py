@@ -5,6 +5,7 @@ A CLI interface into pinboard
 
 import json
 import operator
+import types
 
 import click
 
@@ -17,8 +18,8 @@ from .config import get_auth_token
 @click.version_option()
 def main(ctx):
     auth_token = get_auth_token()
-    ctx.ensure_object(dict)
-    ctx.obj["api"] = pinboard.Pinboard(auth_token)
+    ctx.ensure_object(types.SimpleNamespace)
+    ctx.obj.api = pinboard.Pinboard(auth_token)
 
 
 @main.command()
@@ -29,7 +30,7 @@ def recent(ctx, tags, count):
     """Lists recent bookmarks and notes"""
     if len(tags) > 3:
         ctx.fail("Number of tags should not exceed 3")
-    result = ctx.obj["api"].get_recent_posts(tags=tags, count=count)
+    result = ctx.obj.api.get_recent_posts(tags=tags, count=count)
 
     for entry in result["posts"]:
         bookmarklib.show(entry)
@@ -39,16 +40,16 @@ def recent(ctx, tags, count):
 @click.pass_context
 def stat(ctx):
     """Shows some stastistics"""
-    bookmarks = ctx.obj["api"].get_all_posts()
+    bookmarks = ctx.obj.api.get_all_posts()
     print(f"Bookmarks count: {len(bookmarks)}")
 
-    notes = ctx.obj["api"].get_all_notes()
+    notes = ctx.obj.api.get_all_notes()
     print(f"Notes count: {len(notes)}")
 
-    tags = ctx.obj["api"].get_tags()
+    tags = ctx.obj.api.get_tags()
     print(f"Tags count: {len(tags)}")
 
-    result = ctx.obj["api"].get_last_update()
+    result = ctx.obj.api.get_last_update()
     print(f"Last Update: {result['update_time']}")
 
 
@@ -60,7 +61,7 @@ def stat(ctx):
 @click.option("-u", "--url")
 def ls(ctx, name, description, tag, url):
     """Lists all posts"""
-    posts = ctx.obj["api"].get_all_posts()
+    posts = ctx.obj.api.get_all_posts()
     posts = filter(bookmarklib.by_name(name), posts)
     posts = filter(bookmarklib.by_description(description), posts)
     posts = filter(bookmarklib.by_tag(tag), posts)
@@ -77,7 +78,7 @@ def ls(ctx, name, description, tag, url):
 def rm(ctx, urls):
     """Removes a list of URLs"""
     for url in urls:
-        result = ctx.obj["api"].delete_post(url)
+        result = ctx.obj.api.delete_post(url)
         if (code := result["result_code"]) != "done":
             # TODO: output in error color
             print(f"{url}: {code}")
@@ -87,7 +88,7 @@ def rm(ctx, urls):
 @click.pass_context
 def export(ctx):
     """Exports all posts to JSON"""
-    json_posts = ctx.obj["api"].get_all_posts()
+    json_posts = ctx.obj.api.get_all_posts()
     print(json.dumps(json_posts, indent=4))
 
 
@@ -111,7 +112,7 @@ def add(
     reading_list,
 ):
     """Creates a new post"""
-    result = ctx.obj["api"].add_post(
+    result = ctx.obj.api.add_post(
         url=url,
         title=title,
         description=description,
@@ -137,7 +138,7 @@ def tags(ctx, sort_by):
         key = operator.itemgetter(1)
         reverse = True
 
-    tags = ctx.obj["api"].get_tags()
+    tags = ctx.obj.api.get_tags()
     tags = [
         f"{name}({count})"
         for name, count in sorted(tags.items(), key=key, reverse=reverse)
@@ -152,7 +153,7 @@ def tags(ctx, sort_by):
 )
 def notes(ctx, format):
     """List note titles, or display individual note"""
-    result = ctx.obj["api"].get_all_notes()
+    result = ctx.obj.api.get_all_notes()
 
     if format == "json":
         notelib.show_json(result)
@@ -169,7 +170,7 @@ def notes(ctx, format):
 @click.argument("note_id")
 def note(ctx, note_id, format):
     """Shows a single note"""
-    if entry := ctx.obj["api"].get_note(note_id):
+    if entry := ctx.obj.api.get_note(note_id):
         notelib.show(entry, format)
     else:
         notelib.show_not_found(note_id)
