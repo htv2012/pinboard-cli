@@ -22,7 +22,7 @@ def yes_no(value: bool):
     return "no"
 
 
-class Pinboard:
+class PinboardAPI:
     """
     An API to pinboard.in service
     """
@@ -68,41 +68,23 @@ class Pinboard:
         result = self.call_api("tags/get")
         return result
 
-    def tag_delete(self, tag_name):
-        """
-        Deletes a tag, but not the posts themselves
-
-        :param tag_name: The name of the tag, case sensitive
-        """
-        self.call_api("tags/delete", tag=tag_name)
-
-    def tag_rename(self, old_name, new_name):
-        """
-        Renames a tag
-
-        :param old_name: A string representing the old name
-        :param new_name: A string representing the new name
-        """
-
-        self.call_api("tags/rename", old=old_name, new=new_name)
-
-    def get_recent_posts(self, tags: tuple[str] = None, count: int = None):
-        """Retrieve recent posts"""
+    def get_recent_bookmarks(self, tags: tuple[str] = None, count: int = None):
+        """Retrieve recent bookmarks"""
         result = self.call_api("posts/recent", tags=tags or None, count=count)
         return result
 
-    def get_all_posts(self):
+    def get_all_bookmarks(self):
         """
-        Retrieve a list of all posts
+        Retrieve a list of all bookmarks
 
-        :return: A JSON object representing a list of posts
+        :return: A JSON object representing a list of bookmarks
         """
         result = self.call_api("posts/all")
         return result
 
-    def delete_post(self, url):
+    def delete_bookmark(self, url):
         """
-        Deletes a post represented by the URL
+        Deletes a bookmark represented by the URL
 
         :param url: A string representing the URL to delete
         """
@@ -110,7 +92,7 @@ class Pinboard:
         result = self.call_api("posts/delete", url=url)
         return result
 
-    def add_post(
+    def add_bookmark(
         self,
         url: str,
         title: str,
@@ -120,7 +102,7 @@ class Pinboard:
         public: bool = False,
         reading_list: bool = False,
     ):
-        """Create a new post or update an existing URL"""
+        """Create a new bookmark or update an existing URL"""
         kwargs = dict(
             url=url,
             description=title,
