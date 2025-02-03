@@ -12,18 +12,11 @@ from . import bookmarklib, columnize, notelib, pinboard
 from .config import get_auth_token
 
 
-def get_api():
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-    return api
-
-
 @click.group()
 @click.pass_context
 @click.version_option()
 def main(ctx):
     auth_token = get_auth_token()
-
     ctx.ensure_object(dict)
     ctx.obj["api"] = pinboard.Pinboard(auth_token)
 
@@ -43,34 +36,31 @@ def recent(ctx, tags, count):
 
 
 @main.command()
-def stat():
+@click.pass_context
+def stat(ctx):
     """Shows some stastistics"""
-    api = get_api()
-
-    bookmarks = api.get_all_posts()
+    bookmarks = ctx.obj["api"].get_all_posts()
     print(f"Bookmarks count: {len(bookmarks)}")
 
-    notes = api.get_all_notes()
+    notes = ctx.obj["api"].get_all_notes()
     print(f"Notes count: {len(notes)}")
 
-    tags = api.get_tags()
+    tags = ctx.obj["api"].get_tags()
     print(f"Tags count: {len(tags)}")
 
-    result = api.get_last_update()
+    result = ctx.obj["api"].get_last_update()
     print(f"Last Update: {result['update_time']}")
 
 
 @main.command()
+@click.pass_context
 @click.option("-n", "--name", type=str.casefold, metavar="TEXT")
 @click.option("-d", "--description", type=str.casefold, metavar="TEXT")
 @click.option("-t", "--tag", multiple=True, type=str.casefold, metavar="TEXT")
 @click.option("-u", "--url")
-def ls(name, description, tag, url):
+def ls(ctx, name, description, tag, url):
     """Lists all posts"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-
-    posts = api.get_all_posts()
+    posts = ctx.obj["api"].get_all_posts()
     posts = filter(bookmarklib.by_name(name), posts)
     posts = filter(bookmarklib.by_description(description), posts)
     posts = filter(bookmarklib.by_tag(tag), posts)
@@ -80,30 +70,29 @@ def ls(name, description, tag, url):
         bookmarklib.show(post)
 
 
+# TODO: error if no url specified
 @main.command()
+@click.pass_context
 @click.argument("urls", nargs=-1)
-def rm(urls):
+def rm(ctx, urls):
     """Removes a list of URLs"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
     for url in urls:
-        result = api.delete_post(url)
+        result = ctx.obj["api"].delete_post(url)
         if (code := result["result_code"]) != "done":
             # TODO: output in error color
             print(f"{url}: {code}")
 
 
 @main.command()
-def export():
+@click.pass_context
+def export(ctx):
     """Exports all posts to JSON"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-
-    json_posts = api.get_all_posts()
+    json_posts = ctx.obj['api'].get_all_posts()
     print(json.dumps(json_posts, indent=4))
 
 
 @main.command()
+@click.pass_context
 @click.argument("url")
 @click.argument("title")
 @click.option("-d", "--description")
@@ -112,6 +101,7 @@ def export():
 @click.option("-p", "--public", is_flag=True, default=False)
 @click.option("-r", "--reading-list", is_flag=True, default=False)
 def add(
+    ctx,
     url,
     title,
     description,
@@ -121,10 +111,7 @@ def add(
     reading_list,
 ):
     """Creates a new post"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-
-    result = api.add_post(
+    result = ctx.obj["api"].add_post(
         url=url,
         title=title,
         description=description,
@@ -139,12 +126,10 @@ def add(
 
 
 @main.command()
+@click.pass_context
 @click.option("-s", "--sort-by", type=click.Choice(["name", "count"]), default="name")
-def tags(sort_by):
+def tags(ctx, sort_by):
     """Lists the tags, sorted by tag name"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-
     if sort_by == "name":
         key = operator.itemgetter(0)
         reverse = False
@@ -152,7 +137,7 @@ def tags(sort_by):
         key = operator.itemgetter(1)
         reverse = True
 
-    tags = api.get_tags()
+    tags = ctx.obj["api"].get_tags()
     tags = [
         f"{name}({count})"
         for name, count in sorted(tags.items(), key=key, reverse=reverse)
@@ -161,14 +146,13 @@ def tags(sort_by):
 
 
 @main.command()
+@click.pass_context
 @click.option(
     "-f", "--format", type=click.Choice(["full", "content", "json"]), default="full"
 )
-def notes(format):
+def notes(ctx, format):
     """List note titles, or display individual note"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-    result = api.get_all_notes()
+    result = ctx.obj["api"].get_all_notes()
 
     if format == "json":
         notelib.show_json(result)
@@ -185,10 +169,7 @@ def notes(format):
 @click.argument("note_id")
 def note(ctx, note_id, format):
     """Shows a single note"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-
-    if entry := api.get_note(note_id):
+    if entry := ctx.obj["api"].get_note(note_id):
         notelib.show(entry, format)
     else:
         notelib.show_not_found(note_id)
