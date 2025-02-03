@@ -95,12 +95,12 @@ def export(ctx):
 @main.command()
 @click.pass_context
 @click.option("-u", "--url", prompt=True)
-@click.option("-n","--name", prompt=True)
+@click.option("-n", "--name", prompt=True)
 @click.option("-d", "--description", prompt=True)
 @click.option("-t", "--tag", multiple=True)
-@click.option("-f", "--force-overwrite", is_flag=True, default=False,prompt=True)
-@click.option("-p", "--public", is_flag=True, default=False,prompt=True)
-@click.option("-r", "--reading-list", is_flag=True, default=False,prompt=True)
+@click.option("-f", "--force-overwrite", is_flag=True, default=False, prompt=True)
+@click.option("-p", "--public", is_flag=True, default=False, prompt=True)
+@click.option("-r", "--reading-list", is_flag=True, default=False, prompt=True)
 def add(
     ctx,
     url,
