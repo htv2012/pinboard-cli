@@ -1,0 +1,15 @@
+meta {
+  name: posts-recent
+  type: http
+  seq: 7
+}
+
+get {
+  url: {{root}}/posts/all?{{query}}
+  body: none
+  auth: none
+}
+
+params:query {
+  {{query}}: 
+}

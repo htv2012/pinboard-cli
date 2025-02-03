@@ -87,16 +87,19 @@ class Pinboard:
 
         self.call_api("tags/rename", old=old_name, new=new_name)
 
-    def get_all_posts(self, raw=False):
+    def get_recent_posts(self, tags: tuple[str] = None, count: int = None):
+        """Retrieve recent posts"""
+        result = self.call_api("posts/recent", tags=tags or None, count=count)
+        return result
+
+    def get_all_posts(self):
         """
         Retrieve a list of all posts
 
         :return: A JSON object representing a list of posts
         """
         result = self.call_api("posts/all")
-        if raw:
-            return result
-        return [Post(fields) for fields in result]
+        return result
 
     def delete_post(self, url):
         """

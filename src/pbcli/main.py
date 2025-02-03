@@ -5,11 +5,10 @@ A CLI interface into pinboard
 
 import json
 import operator
-import textwrap
 
 import click
 
-from . import columnize, pinboard
+from . import bookmark, columnize, pinboard
 from .config import get_auth_token
 
 
@@ -20,16 +19,35 @@ def get_api():
 
 
 @click.group()
+@click.pass_context
 @click.version_option()
-def main():
-    pass
+def main(ctx):
+    auth_token = get_auth_token()
+
+    ctx.ensure_object(dict)
+    ctx.obj["api"] = pinboard.Pinboard(auth_token)
+
+
+@main.command()
+@click.pass_context
+@click.option("-t", "--tags", multiple=True, help="Up to 3 tags")
+@click.option("-c", "--count", type=click.IntRange(1, 100))
+def recent(ctx, tags, count):
+    """Lists recent bookmarks and notes"""
+    if len(tags) > 3:
+        ctx.fail("Number of tags should not exceed 3")
+    result = ctx.obj["api"].get_recent_posts(tags=tags, count=count)
+
+    for entry in result["posts"]:
+        bookmark.show(entry)
 
 
 @main.command()
 def stat():
+    """Shows some stastistics"""
     api = get_api()
 
-    bookmarks = api.get_all_posts(raw=True)
+    bookmarks = api.get_all_posts()
     print(f"Bookmarks count: {len(bookmarks)}")
 
     notes = api.get_all_notes()
@@ -43,39 +61,23 @@ def stat():
 
 
 @main.command()
-@click.option("-d", "--description")
-@click.option("-t", "--tag")
+@click.option("-n", "--name", type=str.casefold, metavar="TEXT")
+@click.option("-d", "--description", type=str.casefold, metavar="TEXT")
+@click.option("-t", "--tag", multiple=True, type=str.casefold, metavar="TEXT")
 @click.option("-u", "--url")
-def ls(description, tag, url):
-    """
-    Lists posts. If description, tag, or url are supplied, then perform
-    a wildcard search by those fields
-    """
+def ls(name, description, tag, url):
+    """Lists all posts"""
     auth_token = get_auth_token()
     api = pinboard.Pinboard(auth_token)
 
     posts = api.get_all_posts()
-    posts = filter(lambda p: p.match(description, tag, url), posts)
-    posts = sorted(posts, key=lambda p: p.description.lower())
+    posts = filter(bookmark.by_name(name), posts)
+    posts = filter(bookmark.by_description(description), posts)
+    posts = filter(bookmark.by_tag(tag), posts)
+    posts = filter(bookmark.by_url(url), posts)
+
     for post in posts:
-        description = textwrap.fill(
-            post.description,
-            width=72,
-            subsequent_indent="             ",
-        )
-        print(f"Description: {description}")
-        if post.extended:
-            extended = textwrap.fill(
-                f"{post.extended}",
-                width=72,
-                initial_indent="             ",
-                subsequent_indent="             ",
-            )
-            print(f"{extended}")
-        print(f"URL:         {post.href}")
-        if post.tags:
-            print(f"Tags:        {post.tags}")
-        print()
+        bookmark.show(post)
 
 
 @main.command()
@@ -97,7 +99,7 @@ def export():
     auth_token = get_auth_token()
     api = pinboard.Pinboard(auth_token)
 
-    json_posts = api.get_all_posts(raw=True)
+    json_posts = api.get_all_posts()
     print(json.dumps(json_posts, indent=4))
 
 
