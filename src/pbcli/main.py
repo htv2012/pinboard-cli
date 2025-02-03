@@ -87,7 +87,7 @@ def rm(ctx, urls):
 @click.pass_context
 def export(ctx):
     """Exports all posts to JSON"""
-    json_posts = ctx.obj['api'].get_all_posts()
+    json_posts = ctx.obj["api"].get_all_posts()
     print(json.dumps(json_posts, indent=4))
 
 
