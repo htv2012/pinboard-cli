@@ -8,10 +8,9 @@ import json
 import logging
 import os
 import ssl
+import urllib.error
 import urllib.parse
 import urllib.request
-
-from .config import get_user
 
 logging.basicConfig(level=os.getenv("LOGLEVEL", "WARN"))
 LOGGER = logging.getLogger(__name__)
@@ -87,16 +86,19 @@ class Pinboard:
 
         self.call_api("tags/rename", old=old_name, new=new_name)
 
-    def get_all_posts(self, raw=False):
+    def get_recent_posts(self, tags: tuple[str] = None, count: int = None):
+        """Retrieve recent posts"""
+        result = self.call_api("posts/recent", tags=tags or None, count=count)
+        return result
+
+    def get_all_posts(self):
         """
         Retrieve a list of all posts
 
         :return: A JSON object representing a list of posts
         """
         result = self.call_api("posts/all")
-        if raw:
-            return result
-        return [Post(fields) for fields in result]
+        return result
 
     def delete_post(self, url):
         """
@@ -136,98 +138,13 @@ class Pinboard:
 
     def get_all_notes(self):
         result = self.call_api("notes/list")
-        notes = [Note(raw, self) for raw in result["notes"]]
-        return notes
+        return result
 
-
-class Note:
-    def __init__(self, raw, api):
-        self._raw = raw
-        self._api = api
-        self.id = raw["id"]
-        self.title = raw["title"]
-        self.user = get_user()
-
-    @property
-    def text(self):
-        result = self._api.call_api(f"notes/{self.id}")
-        return result["text"]
-
-    def __repr__(self):
-        return f"Note(id={self.id!r}, title={self.title!r})"
-
-    def __str__(self):
-        return "%s\n  ID: %s\n  URL: %s" % (
-            self.title,
-            self.id,
-            f"https://pinboard.in/u:{self.user}/notes/{self.id}",
-        )
-
-
-class Post:
-    """
-    A single post (bookmark)
-    """
-
-    def __init__(self, raw):
-        self.description = raw["description"]
-        self.extended = raw["extended"]
-        self.hash_value = raw["hash"]
-        self.href = raw["href"]
-        self.meta = raw["meta"]
-        self.shared = raw["shared"]
-        self.tags = raw["tags"]
-        self.time_stamp = raw["time"]
-        self.toread = raw["toread"]
-        self._raw = raw
-
-    def __repr__(self):
-        return f"Post(description={self.description!r}, href={self.href!r})"
-
-    def __eq__(self, other):
-        LOGGER.debug("Compare: %s with %s", self, other)
+    def get_note(self, note_id: str):
         try:
-            return self.href == other.href
-        except AttributeError:
-            return self.href == other
-
-    def match(self, description=None, tag=None, url=None, ignore_case=True):
-        """
-        A predicate to match the this post against a list of criteria
-
-        :param description: None for automatic match, a string for
-            partial match
-        :param tag: None for automatic match, a string for partial match
-        :param url: None for automatic match, a string for partial match
-        :param ignore_case: True (default) for case insensitive match,
-            False for case sensitive match
-        :return: A boolean to indicate if this post matches the criteria
-        """
-
-        return (
-            _matched(description, self.description, ignore_case)
-            and _matched(tag, self.tags, ignore_case)
-            and _matched(url, self.href, ignore_case)
-        )
-
-
-def _matched(search_term, text, ignore_case):
-    """
-    Matches a search term against the text
-
-    :param search_term: None for automatic match, a string for partial
-        match
-    :param text: The text to match against the search term
-    :param ignore_case: True to ignore case, False to perform case
-        sensitive match
-    :return: A boolean indicate if a match was found
-    """
-
-    if search_term is None:
-        return True
-
-    if ignore_case:
-        search_term = search_term.lower()
-        text = text.lower()
-
-    return search_term in text
+            # See notes-ID.json for a sample result
+            result = self.call_api(f"notes/{note_id}")
+            return result
+        except urllib.error.HTTPError:
+            # Not found
+            return None

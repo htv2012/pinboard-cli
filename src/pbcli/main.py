@@ -5,103 +5,95 @@ A CLI interface into pinboard
 
 import json
 import operator
-import textwrap
+import types
 
 import click
 
-from . import columnize, pinboard
+from . import bookmarklib, columnize, notelib, pinboard
 from .config import get_auth_token
 
 
-def get_api():
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-    return api
-
-
 @click.group()
+@click.pass_context
 @click.version_option()
-def main():
-    pass
+def main(ctx):
+    auth_token = get_auth_token()
+    ctx.ensure_object(types.SimpleNamespace)
+    ctx.obj.api = pinboard.Pinboard(auth_token)
 
 
 @main.command()
-def stat():
-    api = get_api()
+@click.pass_context
+@click.option("-t", "--tags", multiple=True, help="Up to 3 tags")
+@click.option("-c", "--count", type=click.IntRange(1, 100))
+def recent(ctx, tags, count):
+    """Lists recent bookmarks and notes"""
+    if len(tags) > 3:
+        ctx.fail("Number of tags should not exceed 3")
+    result = ctx.obj.api.get_recent_posts(tags=tags, count=count)
 
-    bookmarks = api.get_all_posts(raw=True)
+    for entry in result["posts"]:
+        bookmarklib.show(entry)
+
+
+@main.command()
+@click.pass_context
+def stat(ctx):
+    """Shows some stastistics"""
+    bookmarks = ctx.obj.api.get_all_posts()
     print(f"Bookmarks count: {len(bookmarks)}")
 
-    notes = api.get_all_notes()
+    notes = ctx.obj.api.get_all_notes()
     print(f"Notes count: {len(notes)}")
 
-    tags = api.get_tags()
+    tags = ctx.obj.api.get_tags()
     print(f"Tags count: {len(tags)}")
 
-    result = api.get_last_update()
+    result = ctx.obj.api.get_last_update()
     print(f"Last Update: {result['update_time']}")
 
 
 @main.command()
-@click.option("-d", "--description")
-@click.option("-t", "--tag")
+@click.pass_context
+@click.option("-n", "--name", type=str.casefold, metavar="TEXT")
+@click.option("-d", "--description", type=str.casefold, metavar="TEXT")
+@click.option("-t", "--tag", multiple=True, type=str.casefold, metavar="TEXT")
 @click.option("-u", "--url")
-def ls(description, tag, url):
-    """
-    Lists posts. If description, tag, or url are supplied, then perform
-    a wildcard search by those fields
-    """
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
+def ls(ctx, name, description, tag, url):
+    """Lists all posts"""
+    posts = ctx.obj.api.get_all_posts()
+    posts = filter(bookmarklib.by_name(name), posts)
+    posts = filter(bookmarklib.by_description(description), posts)
+    posts = filter(bookmarklib.by_tag(tag), posts)
+    posts = filter(bookmarklib.by_url(url), posts)
 
-    posts = api.get_all_posts()
-    posts = filter(lambda p: p.match(description, tag, url), posts)
-    posts = sorted(posts, key=lambda p: p.description.lower())
     for post in posts:
-        description = textwrap.fill(
-            post.description,
-            width=72,
-            subsequent_indent="             ",
-        )
-        print(f"Description: {description}")
-        if post.extended:
-            extended = textwrap.fill(
-                f"{post.extended}",
-                width=72,
-                initial_indent="             ",
-                subsequent_indent="             ",
-            )
-            print(f"{extended}")
-        print(f"URL:         {post.href}")
-        if post.tags:
-            print(f"Tags:        {post.tags}")
-        print()
+        bookmarklib.show(post)
 
 
+# TODO: error if no url specified
 @main.command()
+@click.pass_context
 @click.argument("urls", nargs=-1)
-def rm(urls):
+def rm(ctx, urls):
     """Removes a list of URLs"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
     for url in urls:
-        result = api.delete_post(url)
+        result = ctx.obj.api.delete_post(url)
         if (code := result["result_code"]) != "done":
             # TODO: output in error color
             print(f"{url}: {code}")
 
 
 @main.command()
-def export():
+@click.pass_context
+def export(ctx):
     """Exports all posts to JSON"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-
-    json_posts = api.get_all_posts(raw=True)
+    json_posts = ctx.obj.api.get_all_posts()
     print(json.dumps(json_posts, indent=4))
 
 
 @main.command()
+@click.pass_context
 @click.argument("url")
 @click.argument("title")
 @click.option("-d", "--description")
@@ -110,6 +102,7 @@ def export():
 @click.option("-p", "--public", is_flag=True, default=False)
 @click.option("-r", "--reading-list", is_flag=True, default=False)
 def add(
+    ctx,
     url,
     title,
     description,
@@ -119,10 +112,7 @@ def add(
     reading_list,
 ):
     """Creates a new post"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-
-    result = api.add_post(
+    result = ctx.obj.api.add_post(
         url=url,
         title=title,
         description=description,
@@ -137,12 +127,10 @@ def add(
 
 
 @main.command()
+@click.pass_context
 @click.option("-s", "--sort-by", type=click.Choice(["name", "count"]), default="name")
-def tags(sort_by):
+def tags(ctx, sort_by):
     """Lists the tags, sorted by tag name"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
-
     if sort_by == "name":
         key = operator.itemgetter(0)
         reverse = False
@@ -150,7 +138,7 @@ def tags(sort_by):
         key = operator.itemgetter(1)
         reverse = True
 
-    tags = api.get_tags()
+    tags = ctx.obj.api.get_tags()
     tags = [
         f"{name}({count})"
         for name, count in sorted(tags.items(), key=key, reverse=reverse)
@@ -159,20 +147,31 @@ def tags(sort_by):
 
 
 @main.command()
-@click.argument("note_id", required=False)
-def notes(note_id):
+@click.pass_context
+@click.option(
+    "-f", "--format", type=click.Choice(["full", "content", "json"]), default="full"
+)
+def notes(ctx, format):
     """List note titles, or display individual note"""
-    auth_token = get_auth_token()
-    api = pinboard.Pinboard(auth_token)
+    result = ctx.obj.api.get_all_notes()
 
-    notes = api.get_all_notes()
-    if note_id is None:
-        for note in notes:
-            print(f"{note}")
+    if format == "json":
+        notelib.show_json(result)
     else:
-        found = next((note for note in notes if note.id == note_id), None)
-        if found is None:
-            raise SystemExit(f"ID not found: {note_id}")
-        print(found.title)
-        print()
-        print(found.text)
+        for entry in result["notes"]:
+            notelib.show(entry, format)
+
+
+@main.command()
+@click.pass_context
+@click.option(
+    "-f", "--format", type=click.Choice(["full", "content", "json"]), default="full"
+)
+@click.argument("note_id")
+def note(ctx, note_id, format):
+    """Shows a single note"""
+    if entry := ctx.obj.api.get_note(note_id):
+        notelib.show(entry, format)
+    else:
+        notelib.show_not_found(note_id)
+        ctx.exit(1)

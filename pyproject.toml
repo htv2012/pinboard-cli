@@ -1,6 +1,6 @@
 [project]
 name = "pbcli"
-version = "2.0.0"
+version = "3.0.0"
 description = "Access Pinboard Bookmark via Command Line Interface"
 readme = "README.md"
 authors = [
@@ -9,6 +9,7 @@ authors = [
 requires-python = ">=3.12"
 dependencies = [
     "click>=8.1.8",
+    "rich>=13.9.4",
 ]
 
 [project.scripts]
@@ -17,3 +18,8 @@ pbcli = "pbcli.main:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[dependency-groups]
+dev = [
+    "jupyterlab>=4.3.5",
+]
