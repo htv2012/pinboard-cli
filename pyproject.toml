@@ -1,5 +1,5 @@
 [project]
-name = "pbcli"
+name = "pinboard-cli"
 version = "3.2.0"
 description = "Access Pinboard Bookmark via Command Line Interface"
 readme = "README.md"
@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pinboard-cli = "pbcli.main:main"
+pinboard-cli = "pinboard_cli.main:main"
 
 [build-system]
 requires = ["hatchling"]
