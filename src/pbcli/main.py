@@ -70,16 +70,14 @@ def ls(ctx, name, description, tag, url):
         bookmarklib.show(bookmark)
 
 
-# TODO: error if no url specified
 @main.command()
 @click.pass_context
-@click.argument("urls", nargs=-1)
-def rm(ctx, urls):
-    """Removes a list of URLs"""
-    for url in urls:
-        result = ctx.obj.api.delete_bookmark(url)
-        if (code := result["result_code"]) != "done":
-            con.error(f"{url}: {code}")
+@click.argument("url")
+def rm(ctx, url):
+    """Removes a URL"""
+    result = ctx.obj.api.delete_bookmark(url)
+    if (code := result["result_code"]) != "done":
+        con.error(f"{url}: {code}")
 
 
 @main.command()
@@ -120,8 +118,7 @@ def add(
         reading_list=reading_list,
     )
     if result["result_code"] != "done":
-        # TODO: use color
-        print(result["result_code"])
+        con.error(result["result_code"])
 
 
 @main.command()
