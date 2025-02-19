@@ -19,47 +19,29 @@ A sample note, which the API return:
     }
 """
 
-import rich.console
-import rich.json
-import rich.theme
+# import rich.console
+# import rich.json
+# import rich.theme
+
+from . import con
 
 TITLE = "title"
 ID = "id"
 LENGTH = "length"
 TEXT = "text"
 
-NOTE_THEME = rich.theme.Theme(
-    {
-        "title": "light_goldenrod1",
-        "meta": "bright_black",
-        "content": "white",
-        "error": "red",
-    }
-)
-
 
 def show(note: dict, format: str):
-    console = rich.console.Console(theme=NOTE_THEME)
     if format == "full":
-        console.print(note[TITLE], style="title")
-        console.print(f"ID: {note[ID]}", style="meta")
-        console.print(f"Length: {note[LENGTH]}", style="meta")
+        con.title(note[TITLE])
+        con.meta(f"ID: {note[ID]}", style="meta")
+        con.meta(f"Length: {note[LENGTH]}", style="meta")
         if text := note.get(TEXT):
-            console.print("---")
-            console.print(text, style="content")
+            con.print("---")
+            con.content(text, style="content")
     elif format == "content":
         if text := note.get(TEXT):
-            console.print(text, style="content")
+            con.content(text, style="content")
     elif format == "json":
-        show_json(note)
-    console.print()
-
-
-def show_not_found(note_id: str):
-    console = rich.console.Console(theme=NOTE_THEME)
-    console.print(f"Note ID not found: {note_id}", style="error")
-
-
-def show_json(data: dict):
-    console = rich.console.Console(theme=NOTE_THEME)
-    console.print(rich.json.JSON.from_data(data, indent=2))
+        con.print_json(note)
+    con.print()

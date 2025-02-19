@@ -13,7 +13,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pbcli = "pbcli.main:main"
+pinboard-cli = "pbcli.main:main"
 
 [build-system]
 requires = ["hatchling"]

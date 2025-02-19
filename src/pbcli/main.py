@@ -8,7 +8,7 @@ import types
 
 import click
 
-from . import bookmarklib, columnize, notelib, pinboard
+from . import bookmarklib, columnize, con, notelib, pinboard
 from .config import get_auth_token
 
 
@@ -79,8 +79,7 @@ def rm(ctx, urls):
     for url in urls:
         result = ctx.obj.api.delete_bookmark(url)
         if (code := result["result_code"]) != "done":
-            # TODO: output in error color
-            print(f"{url}: {code}")
+            con.error(f"{url}: {code}")
 
 
 @main.command()
@@ -88,7 +87,7 @@ def rm(ctx, urls):
 def export(ctx):
     """Exports all bookmarks to JSON"""
     result = ctx.obj.api.get_all_bookmarks()
-    notelib.show_json(result)
+    con.print_json(result)
 
 
 @main.command()
@@ -155,7 +154,7 @@ def notes(ctx, format):
     result = ctx.obj.api.get_all_notes()
 
     if format == "json":
-        notelib.show_json(result)
+        con.print_json(result)
     else:
         for entry in result["notes"]:
             notelib.show(entry, format)
@@ -172,5 +171,5 @@ def note(ctx, note_id, format):
     if entry := ctx.obj.api.get_note(note_id):
         notelib.show(entry, format)
     else:
-        notelib.show_not_found(note_id)
+        con.error(f"Note ID not found: {note_id}")
         ctx.exit(1)
