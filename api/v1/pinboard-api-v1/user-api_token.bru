@@ -1,0 +1,15 @@
+meta {
+  name: user-api_token
+  type: http
+  seq: 9
+}
+
+get {
+  url: {{root}}/user/api_token?{{query}}
+  body: none
+  auth: none
+}
+
+params:query {
+  {{query}}: 
+}

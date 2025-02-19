@@ -17,7 +17,7 @@ def get_config():
     """
     system = platform.system()
     if system in {"Darwin", "Linux", "FreeBSD"}:
-        config_filename = pathlib.Path("~/.config/pbcli.toml").expanduser()
+        config_filename = pathlib.Path("~/.config/pinboard-cli.toml").expanduser()
     else:
         raise SystemExit(f"get_auth_token not implemented for {system}")
 

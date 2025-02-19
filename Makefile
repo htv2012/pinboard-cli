@@ -12,15 +12,15 @@ lint:
 ### Run the project
 run: lint
 	@echo "\n#\n# Stat\n#"
-	uv run pbcli stat
+	uv run pinboard-cli stat
 	@echo "\n#\n# Tags\n#"
-	uv run pbcli tags
+	uv run pinboard-cli tags
 	@echo "\n#\n# Recent\n#"
-	uv run pbcli recent -c 2
+	uv run pinboard-cli recent -c 2
 	@echo "\n#\n# ls\n#"
-	uv run pbcli ls --tag=cheatsheet
+	uv run pinboard-cli ls --tag=cheatsheet
 	@echo "\n#\n# All notes\n#"
-	uv run pbcli notes
+	uv run pinboard-cli notes
 
 ### Run unit tests
 test: lint
