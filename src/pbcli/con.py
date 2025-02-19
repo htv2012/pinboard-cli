@@ -16,10 +16,15 @@ THEME = rich.theme.Theme(
 )
 
 
-_console = rich.console.Console(theme=THEME)
-print = _console.print
-out = _console.print
-title = functools.partial(_console.print, style="title")
-meta = functools.partial(_console.print, style="meta")
-content = functools.partial(_console.print, style="content")
-error = functools.partial(_console.print, style="error")
+_CONSOLE = rich.console.Console(theme=THEME)
+
+print = _CONSOLE.print
+out = _CONSOLE.print
+title = functools.partial(_CONSOLE.print, style="title")
+meta = functools.partial(_CONSOLE.print, style="meta")
+content = functools.partial(_CONSOLE.print, style="content")
+error = functools.partial(_CONSOLE.print, style="error")
+
+
+def print_json(data: dict):
+    _CONSOLE.print(rich.json.JSON.from_data(data, indent=2))

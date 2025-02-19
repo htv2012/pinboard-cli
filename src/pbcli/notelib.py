@@ -19,10 +19,6 @@ A sample note, which the API return:
     }
 """
 
-# import rich.console
-# import rich.json
-# import rich.theme
-
 from . import con
 
 TITLE = "title"
